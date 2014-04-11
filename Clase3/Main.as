@@ -10,6 +10,9 @@
 	import com.greensock.TweenLite;
 	import com.greensock.plugins.ColorMatrixFilterPlugin;
 	import com.greensock.plugins.TweenPlugin;
+	import flash.media.Sound;
+	import flash.net.URLRequest;
+	import flash.media.SoundChannel;
 	
 	TweenPlugin.activate([ColorMatrixFilterPlugin]);
 	
@@ -37,21 +40,20 @@
 			TweenLite.to(inicio,0.5,{y:-800,onComplete:jugar});
 		}
 		
-		private function jugar():void{
-			removeChild(inicio);
+		private function crearTimer():void{
 			timer = new Timer(1500);
 			timer.addEventListener(TimerEvent.TIMER, crearMonstruos);
 			timer.start();
-			
+		}
+		
+		private function crearCarteles():void{
 			vidas = 10;
-			
 			puntaje_txt = new TextField;
 			puntaje_txt.opaqueBackground = true;
 			puntaje_txt.defaultTextFormat = new TextFormat("Arial", 16);
 			puntaje_txt.text = "Puntaje: 0";
 			puntaje_txt.textColor = 0xFFFFFF;
-			puntaje_txt.height = puntaje_txt.textHeight * 1.5;
-			
+			puntaje_txt.height = puntaje_txt.textHeight * 1.5;			
 			vidas_txt = new TextField;
 			vidas_txt.opaqueBackground = true;
 			vidas_txt.defaultTextFormat = new TextFormat("Arial", 16);
@@ -59,12 +61,18 @@
 			vidas_txt.textColor = 0xFFFFFF;
 			vidas_txt.height = puntaje_txt.textHeight * 1.5;
 			vidas_txt.x = stage.stageWidth - vidas_txt.width;
-			
 			puntos = 0;
-			
 			addChild(puntaje_txt);
 			addChild(vidas_txt);
-			
+		}
+		
+		private function jugar():void{
+			removeChild(inicio);
+			var fondo:Sound=new Sound();
+			fondo.load(new URLRequest("sounds/hell-Mike_Koenig-144950046.mp3"));
+			var fondoChannel:SoundChannel=fondo.play();
+			crearTimer();
+			crearCarteles();
 			stage.addEventListener(Event.ENTER_FRAME, mover);
 		}
 		
