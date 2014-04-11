@@ -5,111 +5,162 @@
 	import flash.events.TimerEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
-	import com.greensock.TweenLite;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
-	import flash.display.Sprite;
+	import com.greensock.TweenLite;
+	import com.greensock.plugins.ColorMatrixFilterPlugin;
+	import com.greensock.plugins.TweenPlugin;
+	
+	TweenPlugin.activate([ColorMatrixFilterPlugin]);
 	
 	public class Main extends MovieClip {
 		
 		private var timer:Timer;
+		private var puntaje_txt:TextField;
+		private var vidas_txt:TextField;
+		
+		private var puntos:int;
 		private var vidas:int;
-		private var conteo:int;
-		private var txtVidas:TextField;
-		private var txtPuntaje:TextField;
-		private var contenedor:Sprite;
+		private var inicio:MovieClip;
 		
 		public function Main() {
-			timer=new Timer(500);
-			txtVidas=new TextField();
-			addChild(txtVidas);
-			txtPuntaje=new TextField();
-			addChild(txtPuntaje);
-			txtPuntaje.x=300;
-			txtPuntaje.y=60;
-			contenedor=new Sprite();
-			addChild(contenedor);
-			var format:TextFormat=new TextFormat();
-			format.size=30;
-			format.color=0xFFFF00;
-			txtPuntaje.setTextFormat(format);
-			txtVidas.setTextFormat(format);
-			txtPuntaje.text="Puntaje :";
-			txtVidas.text="Vidas ";
-			vidas=3;
-			conteo=0;
-			timer.addEventListener(TimerEvent.TIMER,crearMonstruos);
+			
+			inicio=new home();
+			inicio.y=-inicio.height;
+			TweenLite.to(inicio,0.5,{y:0});
+			addChild(inicio);
+			inicio.btnJugar.addEventListener(MouseEvent.CLICK,levantarHome);
+			inicio.btnJugar.buttonMode=true;
+		}
+		
+		private function levantarHome(e:MouseEvent){
+			TweenLite.to(inicio,0.5,{y:-800,onComplete:jugar});
+		}
+		
+		private function jugar():void{
+			removeChild(inicio);
+			timer = new Timer(1500);
+			timer.addEventListener(TimerEvent.TIMER, crearMonstruos);
 			timer.start();
-			stage.addEventListener(Event.ENTER_FRAME,mover);
+			
+			vidas = 10;
+			
+			puntaje_txt = new TextField;
+			puntaje_txt.opaqueBackground = true;
+			puntaje_txt.defaultTextFormat = new TextFormat("Arial", 16);
+			puntaje_txt.text = "Puntaje: 0";
+			puntaje_txt.textColor = 0xFFFFFF;
+			puntaje_txt.height = puntaje_txt.textHeight * 1.5;
+			
+			vidas_txt = new TextField;
+			vidas_txt.opaqueBackground = true;
+			vidas_txt.defaultTextFormat = new TextFormat("Arial", 16);
+			vidas_txt.text = "Vidas: "+vidas;
+			vidas_txt.textColor = 0xFFFFFF;
+			vidas_txt.height = puntaje_txt.textHeight * 1.5;
+			vidas_txt.x = stage.stageWidth - vidas_txt.width;
+			
+			puntos = 0;
+			
+			addChild(puntaje_txt);
+			addChild(vidas_txt);
+			
+			stage.addEventListener(Event.ENTER_FRAME, mover);
 		}
 		
 		private function mover(e:Event):void{
-			if(vidas==0){
-				trace("gameOver");
-				for(var a:int=0;a<contenedor.numChildren;a++){
-					var mc1:MovieClip=contenedor.getChildAt(a) as MovieClip;
-					mc1.removeEventListener(MouseEvent.CLICK,morir);
-				}
-				stage.removeEventListener(Event.ENTER_FRAME,mover);
-			}
-			else{
-				var hijos:int=contenedor.numChildren;
-				if(hijos>0){
-					for(var i:int=0;i<hijos;i++){
-						var mc:MovieClip=contenedor.getChildAt(i) as MovieClip;
-						mc.y+=1;
-						if(mc.y>=stage.stageHeight){
+			var hijos:int = numChildren;
+			if(hijos > 0){
+				for(var i:int = 0; i < hijos; i++){
+					var mc:MovieClip = getChildAt(i) as MovieClip;
+					if(mc){
+						mc.x += 5;
+						
+						if(mc.x >= stage.stageWidth){
 							vidas--;
-							timer.stop();
-							contenedor.removeChild(mc);
-							hijos--;
+							//TweenLite.to(mc, 1, {colorMatrixFilter:{colorize:0xff0000, amount:0.5}});
+							TweenLite.to(this, 0.5, {onComplete:regresarEstadoNormal,
+										 			colorMatrixFilter:{colorize:0x000000, amount:0.5}});
+							vidas_txt.text = "Vidas: " + vidas.toString();
+							removeChild(mc);
+							
+							hijos--
+							
+							if(vidas == 0){
+								trace("Acabó");
+								stage.removeEventListener(Event.ENTER_FRAME, mover);
+								timer.stop();
+							}
+							
 						}
 					}
+					
 				}
 			}
 		}
+		
+		private function regresarEstadoNormal():void{
+			TweenLite.to(this, 0.5, {colorMatrixFilter:{colorize:0x000000, amount:0}});
+		}
+													 
 		
 		private function crearMonstruos(e:TimerEvent):void{
-			var mod:int=timer.currentCount%3;
-			var enemigo:MovieClip;
-			if(mod==0){
-				enemigo=new enemigo2();
-				enemigo.tabIndex=4;
-				enemigo.name='enemigo2';
-			}else{
-				enemigo=new enemigo1();
-				enemigo.tabIndex=2;
-				enemigo.name='enemigo1';
+			var mod:int = timer.currentCount%3;
+			
+			var enemigo:MovieClip
+			if(mod == 0){
+				enemigo = new enemigo1();
+				enemigo.tabIndex = 4;
+				enemigo.name = "enemigo1";
 			}
-			enemigo.x=Math.random()*stage.stageWidth;
-			enemigo.addEventListener(MouseEvent.CLICK,morir);
-			enemigo.y=10;
-			contenedor.addChild(enemigo);
+			else{
+				enemigo = new enemigo2();
+				enemigo.tabIndex = 2;
+				enemigo.name = "enemigo2";
+			}
+			enemigo.scaleX=-1;
+			enemigo.x = 0;
+			enemigo.y = Math.random()*stage.stageWidth;
+			
+			enemigo.addEventListener(MouseEvent.CLICK, matar);
+			
+			addChild(enemigo);
 		}
 		
-		private function morir(e:MouseEvent):void{
-			if(vidas>0){
-				var mc:MovieClip=e.currentTarget as MovieClip;
-				var nombre:String=mc.name;
-				if(mc.tabIndex>0){
-					mc.tabIndex--;
-					if(mc.tabIndex==0){
-						TweenLite.to(mc,0.5,{alpha:0,onComplete:removeScena,onCompleteParams:[mc]});
-					}else{
-						if(nombre=='enemigo1'){
-							TweenLite.to(mc,0.1,{x:mc.x+10});
-						}else{
-							TweenLite.to(mc,0.1,{rotation:mc.rotation+10,x:mc.x+10,alpha:0.9});
-						}
-					}
+		private function matar(e:MouseEvent):void{
+			var mc:MovieClip = e.currentTarget as MovieClip;
+			var nombre:String = mc.name;
+			//trace(mc.tabIndex);
+			
+			mc.tabIndex--;
+			
+			if(mc.tabIndex == 0){
+				
+				//removeChild(mc);
+				mc.removeEventListener(MouseEvent.CLICK, matar);
+				
+				TweenLite.to(mc, 0.5, {alpha:0, onComplete:removeChild, onCompleteParams:[mc]});
+				
+				puntos++;
+				
+				puntaje_txt.text = "Puntaje: " + puntos.toString();
+				
+			}
+			else{
+				if(nombre == "enemigo1"){
+					
+					mc.scaleX = -1.5;
+					mc.scaleY = 1.5;
+					TweenLite.to(mc, 0.3, {x:"+50", scaleX:-1, scaleY:1});
 				}
+				else{
+					mc.scaleX = -1.5;
+					mc.scaleY = 1.5;
+					TweenLite.to(mc, 0.3, {rotation:"+50", scaleX:-1, scaleY:1 });
+				}
+				
 			}
 		}
-		
-		private function removeScena(mc:MovieClip):void{
-			conteo++;
-			contenedor.removeChild(mc);
-		}
-		
 	}
+	
 }
